@@ -1,0 +1,4 @@
+_build
+deps
+mix.lock
+/parallel_tree_walk
