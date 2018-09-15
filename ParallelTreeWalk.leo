@@ -9,10 +9,10 @@
 <preferences/>
 <find_panel_settings/>
 <vnodes>
-<v t="tbuttler.20180908205248.2" a="E"><vh>@clean README.md</vh>
+<v t="tbuttler.20180908205248.2"><vh>@clean README.md</vh>
 <v t="tbuttler.20180908205248.3"><vh>ParallelTreeWalk</vh></v>
 </v>
-<v t="tbuttler.20180908211411.2" a="E"><vh>@clean lib/parallel_tree_walk.ex</vh>
+<v t="tbuttler.20180908211411.2"><vh>@clean lib/parallel_tree_walk.ex</vh>
 <v t="tbuttler.20180908232353.1"><vh>defp pool_name()</vh></v>
 <v t="tbuttler.20180908232425.1"><vh>start(_type, _args)</vh></v>
 <v t="tbuttler.20180908232444.1"><vh>procdir(path_name)</vh></v>
@@ -26,7 +26,7 @@
 <v t="tbuttler.20180908232955.1"><vh>def handle_call(dir_data, _from, state)</vh></v>
 <v t="tbuttler.20180908233001.1"><vh>def procdir(pid, dir_data)</vh></v>
 </v>
-<v t="tbuttler.20180908232152.2" a="E"><vh>@clean lib/parallel_tree_walk/proc_dir.ex</vh>
+<v t="tbuttler.20180908232152.2"><vh>@clean lib/parallel_tree_walk/proc_dir.ex</vh>
 <v t="tbuttler.20180908233156.1"><vh>procdir(data = {path_name, major, _proc_entry, _proc_filter})</vh></v>
 <v t="tbuttler.20180908233204.1"><vh>procdir({path_name, major, proc_entry, proc_filter}, file_stat)</vh></v>
 <v t="tbuttler.20180908233233.1"><vh>use Bitwise</vh></v>
@@ -67,7 +67,7 @@ Run with:
 where
 
 * path_name is the path to a directory or file
-* major is the major device number reported by lstat(), and ensures that the program does not descend into mount points
+* major is the major device number reported by lstat(), and ensures that the program does not descend into mount points; *however* if its value is false (:false, nil, :nil) it *will* cross mount points
 * proc_entry is a lambda
   * expecting as arguments
     * a file path
@@ -79,7 +79,7 @@ where
   * expecting as argument
     * the last component of a file name
   * returning
-    * :true for things to be processed
+    * true for things to be processed
     * :false otherwise; use it to prune the tree by file name, e.g., to skip ".git" directories.
 
 To Do:
@@ -158,9 +158,9 @@ def procdir(path_name) do # /1 example
   {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
   proc_entry = fn(name, _stat) -&gt;
     IO.puts("#{name}")
-    :true
+    true
   end
-  filter_entry = fn(_name) -&gt; :true end      # accept all, for this demo
+  filter_entry = fn(_name) -&gt; true end      # accept all, for this demo
   procdir(path_name, major, proc_entry, filter_entry)
   wait_for_empty_poolboy()
 end
@@ -208,10 +208,15 @@ end
   case retry(fn() -&gt; File.lstat(path_name) end, 0, 10) do
     {:ok, file_stat} -&gt;
       case file_stat do
-        # todo: develop design such that "major" can indicate we *do* want to cross file system boundaries
-        %File.Stat{major_device: ^major} -&gt; procdir(data, file_stat)
-        %File.Stat{type: :directory}     -&gt; :will_not_cross_mount_points
-        _                                -&gt; procdir(data, file_stat) # still process device with differing major
+        %File.Stat{major_device: ^major} -&gt;
+          procdir(data, file_stat)
+        %File.Stat{type: :directory}     -&gt;
+          case major do
+            false -&gt; procdir(data, file_stat) # caller wants to cross file system boundaries
+            _     -&gt; :will_not_cross_mount_points
+          end
+        _                                -&gt;
+          procdir(data, file_stat) # still process device with differing major
       end
     result           -&gt;
       Logger.warn("File.lstat of #{path_name} repeatedly failed: #{inspect(result)}")
