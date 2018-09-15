@@ -8,6 +8,7 @@ defmodule ParallelTreeWalk.Mixfile do
      elixir: "~> 1.0",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     escript: escript(),
      deps: deps()]
   end
 
@@ -21,6 +22,11 @@ defmodule ParallelTreeWalk.Mixfile do
     ]
   end
 
+  
+  def escript do
+    [main_module: ParallelTreeWalk]
+  end
+  
   # Dependencies can be Hex packages:
   #
   #   {:mydep, "~> 0.3.0"}
@@ -35,4 +41,5 @@ defmodule ParallelTreeWalk.Mixfile do
       {:poolboy, "~> 1.5"}
     ]
   end
+
 end
