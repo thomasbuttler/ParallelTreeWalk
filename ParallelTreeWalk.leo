@@ -12,7 +12,8 @@
 <v t="tbuttler.20180908205248.2"><vh>@clean README.md</vh>
 <v t="tbuttler.20180908205248.3"><vh>ParallelTreeWalk</vh></v>
 </v>
-<v t="tbuttler.20180908211411.2"><vh>@clean lib/parallel_tree_walk.ex</vh>
+<v t="tbuttler.20181125204114.1"><vh>lib</vh>
+<v t="tbuttler.20180908211411.2"><vh>@clean parallel_tree_walk.ex</vh>
 <v t="tbuttler.20180908232353.1"><vh>defp pool_name()</vh></v>
 <v t="tbuttler.20180908232425.1"><vh>start(_type, _args)</vh></v>
 <v t="tbuttler.20180908232444.1"><vh>procdir(path_name)</vh></v>
@@ -20,21 +21,33 @@
 <v t="tbuttler.20180909003721.1"><vh>main(_)</vh></v>
 <v t="tbuttler.20180915033213.1"><vh>wait_for_empty_poolboy()</vh></v>
 </v>
-<v t="tbuttler.20180908232152.4"><vh>@clean lib/parallel_tree_walk/worker.ex</vh>
+<v t="tbuttler.20180908232152.4"><vh>@clean parallel_tree_walk/worker.ex</vh>
 <v t="tbuttler.20180908232939.1"><vh>def start_link([])</vh></v>
 <v t="tbuttler.20180908232947.1"><vh>def init(state)</vh></v>
 <v t="tbuttler.20180908232955.1"><vh>def handle_call(dir_data, _from, state)</vh></v>
 <v t="tbuttler.20180908233001.1"><vh>def procdir(pid, dir_data)</vh></v>
 </v>
-<v t="tbuttler.20180908232152.2"><vh>@clean lib/parallel_tree_walk/proc_dir.ex</vh>
+<v t="tbuttler.20180908232152.2"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
 <v t="tbuttler.20180908233156.1"><vh>procdir(data = {path_name, major, _proc_entry, _proc_filter})</vh></v>
 <v t="tbuttler.20180908233204.1"><vh>procdir({path_name, major, proc_entry, proc_filter}, file_stat)</vh></v>
 <v t="tbuttler.20180908233233.1"><vh>use Bitwise</vh></v>
 <v t="tbuttler.20180908233215.1"><vh>defp retry(to_retry, count, max) when count &lt; max</vh></v>
 <v t="tbuttler.20180908233220.1"><vh>defp retry(to_retry, _, _)</vh></v>
 </v>
+</v>
+<v t="tbuttler.20181125204159.1" a="E"><vh>test</vh>
+<v t="tbuttler.20181125204226.2"><vh>@clean ParallelTreeWalk_test.exs</vh></v>
+<v t="tbuttler.20181125204226.4"><vh>@clean test_helper.exs</vh></v>
+<v t="tbuttler.20181125204539.1" a="E"><vh>dir</vh>
+<v t="tbuttler.20181125204557.1"><vh>@clean a.txt</vh></v>
+<v t="tbuttler.20181125204620.1"><vh>@clean b.txt</vh></v>
+<v t="tbuttler.20181125204627.1"><vh>@clean c/d/f.txt</vh></v>
+</v>
+</v>
 <v t="tbuttler.20180909002850.2"><vh>@clean mix.exs</vh></v>
 <v t="tbuttler.20180909022109.1"><vh>@clean .gitignore</vh></v>
+<v t="tbuttler.20181125204226.1"><vh>Imported Files</vh></v>
+<v t="tbuttler.20181125204226.3"><vh>Imported Files</vh></v>
 </vnodes>
 <tnodes>
 <t tx="tbuttler.20180908205248.2">@others
@@ -328,5 +341,38 @@ mix.lock
 end
 
 </t>
+<t tx="tbuttler.20181125204114.1">@path lib
+</t>
+<t tx="tbuttler.20181125204159.1">@path test
+</t>
+<t tx="tbuttler.20181125204226.1"></t>
+<t tx="tbuttler.20181125204226.2">@language elixir
+defmodule ParallelTreeWalkTest do
+  use ExUnit.Case
+
+  test "basic traversal works" do
+    test_files = ["test/dir/a.txt", "test/dir/b.txt", "test/dir/badlink", "test/dir/c/d/f.txt", "test/dir/goodlink"]
+    {:ok, walker} = DirWalker.start_link("test/dir")
+    files = DirWalker.next(walker, 99)
+    assert length(files) == 5
+    assert Enum.sort(files) == Enum.sort(test_files)
+  end
+
+
+end
+</t>
+<t tx="tbuttler.20181125204226.3"></t>
+<t tx="tbuttler.20181125204226.4">@language elixir
+ExUnit.start()
+
+git_wont_track_empty_dir = "test/dir/c/d/e"
+
+File.mkdir(git_wont_track_empty_dir)
+</t>
+<t tx="tbuttler.20181125204539.1">@path dir
+</t>
+<t tx="tbuttler.20181125204557.1"></t>
+<t tx="tbuttler.20181125204620.1"></t>
+<t tx="tbuttler.20181125204627.1"></t>
 </tnodes>
 </leo_file>
