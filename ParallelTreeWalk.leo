@@ -19,7 +19,7 @@
 <v t="tbuttler.20180908232444.1"><vh>procdir(path_name)</vh></v>
 <v t="tbuttler.20180908232512.1"><vh>procdir(path_name, major, proc_entry, filter_entry)</vh></v>
 <v t="tbuttler.20180909003721.1"><vh>main(_)</vh></v>
-<v t="tbuttler.20180915033213.1"><vh>wait_for_empty_poolboy()</vh></v>
+<v t="tbuttler.20180915033213.1"><vh>wait_until_finished()</vh></v>
 </v>
 <v t="tbuttler.20180908232152.4"><vh>@clean parallel_tree_walk/worker.ex</vh>
 <v t="tbuttler.20180908232939.1"><vh>def start_link([])</vh></v>
@@ -27,7 +27,7 @@
 <v t="tbuttler.20180908232955.1"><vh>def handle_call(dir_data, _from, state)</vh></v>
 <v t="tbuttler.20180908233001.1"><vh>def procdir(pid, dir_data)</vh></v>
 </v>
-<v t="tbuttler.20180908232152.2" a="E"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
+<v t="tbuttler.20180908232152.2"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
 <v t="tbuttler.20180908233156.1"><vh>procdir(data = {path_name, major, _proc_entry, _proc_filter})</vh></v>
 <v t="tbuttler.20180908233204.1"><vh>procdir({path_name, major, proc_entry, proc_filter}, file_stat)</vh></v>
 <v t="tbuttler.20180908233233.1"><vh>use Bitwise</vh></v>
@@ -38,7 +38,7 @@
 <v t="tbuttler.20181125204159.1" a="E"><vh>test</vh>
 <v t="tbuttler.20181125204226.2"><vh>@clean ParallelTreeWalk_test.exs</vh></v>
 <v t="tbuttler.20181125204226.4"><vh>@clean test_helper.exs</vh></v>
-<v t="tbuttler.20181125204539.1" a="E"><vh>dir</vh>
+<v t="tbuttler.20181125204539.1"><vh>dir</vh>
 <v t="tbuttler.20181125204557.1"><vh>@clean a.txt</vh></v>
 <v t="tbuttler.20181125204620.1"><vh>@clean b.txt</vh></v>
 <v t="tbuttler.20181125204627.1"><vh>@clean c/d/f.txt</vh></v>
@@ -175,7 +175,7 @@ def procdir(path_name) do # /1 example
   end
   filter_entry = fn(_name) -&gt; true end      # accept all, for this demo
   procdir(path_name, major, proc_entry, filter_entry)
-  wait_for_empty_poolboy()
+  wait_until_finished()
 end
 
 </t>
@@ -332,11 +332,12 @@ deps
 mix.lock
 /parallel_tree_walk
 </t>
-<t tx="tbuttler.20180915033213.1">defp wait_for_empty_poolboy() do
+<t tx="tbuttler.20180915033213.1">def wait_until_finished() do
+  # look for 0 allocated poolboy processes
   case :poolboy.status(pool_name()) do
   {_, _, _, 0} -&gt; :ok
   _            -&gt; :timer.sleep(10)
-                  wait_for_empty_poolboy()
+                  wait_until_finished()
   end
 end
 
@@ -351,18 +352,24 @@ defmodule ParallelTreeWalkTest do
   use ExUnit.Case
 
   test "basic traversal works" do
-    test_files = ["test/dir/a.txt", "test/dir/b.txt", "test/dir/badlink", "test/dir/c/d/f.txt", "test/dir/goodlink"]
+    path_name = "test/dir"
+    test_files = ["test/dir", "test/dir/a.txt", "test/dir/b.txt", "test/dir/badlink", "test/dir/c", "test/dir/c/d", "test/dir/c/d/e", "test/dir/c/d/f.txt", "test/dir/goodlink"]
     {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
-    filter_entry = fn(_name) -&gt; true end      # accept all, for this test
-    store = :ets.new(test_store, [])
+    filter_entry = fn(_name) -&gt;
+      true
+    end      # accept all, for this test
+    store = :ets.new(:store, [:public])
     proc_entry = fn(name, _stat) -&gt;
-      :ets.insert(store, {name})
+      :ets.insert(store, {name, 1})
     end
-    ParallelTreeWalk.procdir("test/dir", major, proc_entry, filter_entry)
-    ParallelTreeWalk.wait_for_empty_poolboy()
-    files = for {n} -&gt; :ets.match_object(store, :_) do n end
+    ParallelTreeWalk.procdir(path_name, major, proc_entry, filter_entry)
+    ParallelTreeWalk.wait_until_finished()
+    files = for {n,_} &lt;- :ets.match_object(store, {:_,:_}) do
+      IO.puts("#{n}")
+      n
+    end
     :ets.delete(store)
-    assert length(files) == 5
+    assert length(files) == 9
     assert Enum.sort(files) == Enum.sort(test_files)
   end
 
