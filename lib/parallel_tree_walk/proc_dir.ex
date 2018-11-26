@@ -5,10 +5,15 @@ defmodule ParallelTreeWalk.ProcDir do
     case retry(fn() -> File.lstat(path_name) end, 0, 10) do
       {:ok, file_stat} ->
         case file_stat do
-          # todo: develop design such that "major" can indicate we *do* want to cross file system boundaries
-          %File.Stat{major_device: ^major} -> procdir(data, file_stat)
-          %File.Stat{type: :directory}     -> :will_not_cross_mount_points
-          _                                -> procdir(data, file_stat) # still process device with differing major
+          %File.Stat{major_device: ^major} ->
+            procdir(data, file_stat)
+          %File.Stat{type: :directory}     ->
+            case major do
+              false -> procdir(data, file_stat) # caller wants to cross file system boundaries
+              _     -> :will_not_cross_mount_points
+            end
+          _                                ->
+            procdir(data, file_stat) # still process device with differing major
         end
       result           ->
         Logger.warn("File.lstat of #{path_name} repeatedly failed: #{inspect(result)}")

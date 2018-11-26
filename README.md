@@ -24,7 +24,7 @@ Run with:
 where
 
 * path_name is the path to a directory or file
-* major is the major device number reported by lstat(), and ensures that the program does not descend into mount points
+* major is the major device number reported by lstat(), and ensures that the program does not descend into mount points; *however* if its value is false (:false, nil, :nil) it *will* cross mount points
 * proc_entry is a lambda
   * expecting as arguments
     * a file path
@@ -36,7 +36,7 @@ where
   * expecting as argument
     * the last component of a file name
   * returning
-    * :true for things to be processed
+    * true for things to be processed
     * :false otherwise; use it to prune the tree by file name, e.g., to skip ".git" directories.
 
 To Do:

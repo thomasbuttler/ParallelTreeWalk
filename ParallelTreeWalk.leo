@@ -9,32 +9,45 @@
 <preferences/>
 <find_panel_settings/>
 <vnodes>
-<v t="tbuttler.20180908205248.2" a="E"><vh>@clean README.md</vh>
+<v t="tbuttler.20180908205248.2"><vh>@clean README.md</vh>
 <v t="tbuttler.20180908205248.3"><vh>ParallelTreeWalk</vh></v>
 </v>
-<v t="tbuttler.20180908211411.2" a="E"><vh>@clean lib/parallel_tree_walk.ex</vh>
+<v t="tbuttler.20181125204114.1" a="E"><vh>lib</vh>
+<v t="tbuttler.20180908211411.2" a="E"><vh>@clean parallel_tree_walk.ex</vh>
 <v t="tbuttler.20180908232353.1"><vh>defp pool_name()</vh></v>
 <v t="tbuttler.20180908232425.1"><vh>start(_type, _args)</vh></v>
 <v t="tbuttler.20180908232444.1"><vh>procdir(path_name)</vh></v>
 <v t="tbuttler.20180908232512.1"><vh>procdir(path_name, major, proc_entry, filter_entry)</vh></v>
 <v t="tbuttler.20180909003721.1"><vh>main(_)</vh></v>
-<v t="tbuttler.20180915033213.1"><vh>wait_for_empty_poolboy()</vh></v>
+<v t="tbuttler.20180915033213.1"><vh>wait_until_finished()</vh></v>
 </v>
-<v t="tbuttler.20180908232152.4"><vh>@clean lib/parallel_tree_walk/worker.ex</vh>
+<v t="tbuttler.20180908232152.4"><vh>@clean parallel_tree_walk/worker.ex</vh>
 <v t="tbuttler.20180908232939.1"><vh>def start_link([])</vh></v>
 <v t="tbuttler.20180908232947.1"><vh>def init(state)</vh></v>
 <v t="tbuttler.20180908232955.1"><vh>def handle_call(dir_data, _from, state)</vh></v>
 <v t="tbuttler.20180908233001.1"><vh>def procdir(pid, dir_data)</vh></v>
 </v>
-<v t="tbuttler.20180908232152.2" a="E"><vh>@clean lib/parallel_tree_walk/proc_dir.ex</vh>
+<v t="tbuttler.20180908232152.2"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
 <v t="tbuttler.20180908233156.1"><vh>procdir(data = {path_name, major, _proc_entry, _proc_filter})</vh></v>
 <v t="tbuttler.20180908233204.1"><vh>procdir({path_name, major, proc_entry, proc_filter}, file_stat)</vh></v>
 <v t="tbuttler.20180908233233.1"><vh>use Bitwise</vh></v>
 <v t="tbuttler.20180908233215.1"><vh>defp retry(to_retry, count, max) when count &lt; max</vh></v>
 <v t="tbuttler.20180908233220.1"><vh>defp retry(to_retry, _, _)</vh></v>
 </v>
+</v>
+<v t="tbuttler.20181125204159.1" a="E"><vh>test</vh>
+<v t="tbuttler.20181125204226.2"><vh>@clean ParallelTreeWalk_test.exs</vh></v>
+<v t="tbuttler.20181125204226.4"><vh>@clean test_helper.exs</vh></v>
+<v t="tbuttler.20181125204539.1"><vh>dir</vh>
+<v t="tbuttler.20181125204557.1"><vh>@clean a.txt</vh></v>
+<v t="tbuttler.20181125204620.1"><vh>@clean b.txt</vh></v>
+<v t="tbuttler.20181125204627.1"><vh>@clean c/d/f.txt</vh></v>
+</v>
+</v>
 <v t="tbuttler.20180909002850.2"><vh>@clean mix.exs</vh></v>
 <v t="tbuttler.20180909022109.1"><vh>@clean .gitignore</vh></v>
+<v t="tbuttler.20181125204226.1"><vh>Imported Files</vh></v>
+<v t="tbuttler.20181125204226.3"><vh>Imported Files</vh></v>
 </vnodes>
 <tnodes>
 <t tx="tbuttler.20180908205248.2">@others
@@ -67,7 +80,7 @@ Run with:
 where
 
 * path_name is the path to a directory or file
-* major is the major device number reported by lstat(), and ensures that the program does not descend into mount points
+* major is the major device number reported by lstat(), and ensures that the program does not descend into mount points; *however* if its value is false (:false, nil, :nil) it *will* cross mount points
 * proc_entry is a lambda
   * expecting as arguments
     * a file path
@@ -79,7 +92,7 @@ where
   * expecting as argument
     * the last component of a file name
   * returning
-    * :true for things to be processed
+    * true for things to be processed
     * :false otherwise; use it to prune the tree by file name, e.g., to skip ".git" directories.
 
 To Do:
@@ -158,11 +171,11 @@ def procdir(path_name) do # /1 example
   {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
   proc_entry = fn(name, _stat) -&gt;
     IO.puts("#{name}")
-    :true
+    true
   end
-  filter_entry = fn(_name) -&gt; :true end      # accept all, for this demo
+  filter_entry = fn(_name) -&gt; true end      # accept all, for this demo
   procdir(path_name, major, proc_entry, filter_entry)
-  wait_for_empty_poolboy()
+  wait_until_finished()
 end
 
 </t>
@@ -208,10 +221,15 @@ end
   case retry(fn() -&gt; File.lstat(path_name) end, 0, 10) do
     {:ok, file_stat} -&gt;
       case file_stat do
-        # todo: develop design such that "major" can indicate we *do* want to cross file system boundaries
-        %File.Stat{major_device: ^major} -&gt; procdir(data, file_stat)
-        %File.Stat{type: :directory}     -&gt; :will_not_cross_mount_points
-        _                                -&gt; procdir(data, file_stat) # still process device with differing major
+        %File.Stat{major_device: ^major} -&gt;
+          procdir(data, file_stat)
+        %File.Stat{type: :directory}     -&gt;
+          case major do
+            false -&gt; procdir(data, file_stat) # caller wants to cross file system boundaries
+            _     -&gt; :will_not_cross_mount_points
+          end
+        _                                -&gt;
+          procdir(data, file_stat) # still process device with differing major
       end
     result           -&gt;
       Logger.warn("File.lstat of #{path_name} repeatedly failed: #{inspect(result)}")
@@ -314,14 +332,61 @@ deps
 mix.lock
 /parallel_tree_walk
 </t>
-<t tx="tbuttler.20180915033213.1">defp wait_for_empty_poolboy() do
+<t tx="tbuttler.20180915033213.1">def wait_until_finished() do
+  # look for 0 allocated poolboy processes
   case :poolboy.status(pool_name()) do
   {_, _, _, 0} -&gt; :ok
   _            -&gt; :timer.sleep(10)
-                  wait_for_empty_poolboy()
+                  wait_until_finished()
   end
 end
 
 </t>
+<t tx="tbuttler.20181125204114.1">@path lib
+</t>
+<t tx="tbuttler.20181125204159.1">@path test
+</t>
+<t tx="tbuttler.20181125204226.1"></t>
+<t tx="tbuttler.20181125204226.2">@language elixir
+defmodule ParallelTreeWalkTest do
+  use ExUnit.Case
+
+  test "basic traversal works" do
+    path_name = "test/dir"
+    test_files = ["test/dir", "test/dir/a.txt", "test/dir/b.txt", "test/dir/badlink", "test/dir/c", "test/dir/c/d", "test/dir/c/d/e", "test/dir/c/d/f.txt", "test/dir/goodlink"]
+    {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
+    filter_entry = fn(_name) -&gt;
+      true
+    end      # accept all, for this test
+    store = :ets.new(:store, [:public])
+    proc_entry = fn(name, _stat) -&gt;
+      :ets.insert(store, {name, 1})
+    end
+    ParallelTreeWalk.procdir(path_name, major, proc_entry, filter_entry)
+    ParallelTreeWalk.wait_until_finished()
+    files = for {n,_} &lt;- :ets.match_object(store, {:_,:_}) do
+      IO.puts("#{n}")
+      n
+    end
+    :ets.delete(store)
+    assert length(files) == 9
+    assert Enum.sort(files) == Enum.sort(test_files)
+  end
+
+end
+</t>
+<t tx="tbuttler.20181125204226.3"></t>
+<t tx="tbuttler.20181125204226.4">@language elixir
+ExUnit.start()
+
+git_wont_track_empty_dir = "test/dir/c/d/e"
+
+File.mkdir(git_wont_track_empty_dir)
+</t>
+<t tx="tbuttler.20181125204539.1">@path dir
+</t>
+<t tx="tbuttler.20181125204557.1"></t>
+<t tx="tbuttler.20181125204620.1"></t>
+<t tx="tbuttler.20181125204627.1"></t>
 </tnodes>
 </leo_file>

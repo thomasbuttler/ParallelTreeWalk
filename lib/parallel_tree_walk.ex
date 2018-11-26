@@ -33,11 +33,11 @@ defmodule ParallelTreeWalk do
     {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
     proc_entry = fn(name, _stat) ->
       IO.puts("#{name}")
-      :true
+      true
     end
-    filter_entry = fn(_name) -> :true end      # accept all, for this demo
+    filter_entry = fn(_name) -> true end      # accept all, for this demo
     procdir(path_name, major, proc_entry, filter_entry)
-    wait_for_empty_poolboy()
+    wait_until_finished()
   end
 
   def procdir(path_name, major, proc_entry, filter_entry) do # /4 version
@@ -61,11 +61,12 @@ defmodule ParallelTreeWalk do
     procdir(".")
   end
 
-  defp wait_for_empty_poolboy() do
+  def wait_until_finished() do
+    # look for 0 allocated poolboy processes
     case :poolboy.status(pool_name()) do
     {_, _, _, 0} -> :ok
     _            -> :timer.sleep(10)
-                    wait_for_empty_poolboy()
+                    wait_until_finished()
     end
   end
 
