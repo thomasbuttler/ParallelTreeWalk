@@ -12,8 +12,8 @@
 <v t="tbuttler.20180908205248.2"><vh>@clean README.md</vh>
 <v t="tbuttler.20180908205248.3"><vh>ParallelTreeWalk</vh></v>
 </v>
-<v t="tbuttler.20181125204114.1" a="E"><vh>lib</vh>
-<v t="tbuttler.20180908211411.2" a="E"><vh>@clean parallel_tree_walk.ex</vh>
+<v t="tbuttler.20181125204114.1"><vh>lib</vh>
+<v t="tbuttler.20180908211411.2"><vh>@clean parallel_tree_walk.ex</vh>
 <v t="tbuttler.20180908232353.1"><vh>defp pool_name()</vh></v>
 <v t="tbuttler.20180908232425.1"><vh>start(_type, _args)</vh></v>
 <v t="tbuttler.20180908232444.1"><vh>procdir(path_name)</vh></v>
@@ -35,7 +35,7 @@
 <v t="tbuttler.20180908233220.1"><vh>defp retry(to_retry, _, _)</vh></v>
 </v>
 </v>
-<v t="tbuttler.20181125204159.1" a="E"><vh>test</vh>
+<v t="tbuttler.20181125204159.1"><vh>test</vh>
 <v t="tbuttler.20181125204226.2"><vh>@clean ParallelTreeWalk_test.exs</vh></v>
 <v t="tbuttler.20181125204226.4"><vh>@clean test_helper.exs</vh></v>
 <v t="tbuttler.20181125204539.1"><vh>dir</vh>
@@ -46,8 +46,6 @@
 </v>
 <v t="tbuttler.20180909002850.2"><vh>@clean mix.exs</vh></v>
 <v t="tbuttler.20180909022109.1"><vh>@clean .gitignore</vh></v>
-<v t="tbuttler.20181125204226.1"><vh>Imported Files</vh></v>
-<v t="tbuttler.20181125204226.3"><vh>Imported Files</vh></v>
 </vnodes>
 <tnodes>
 <t tx="tbuttler.20180908205248.2">@others
@@ -123,7 +121,7 @@ defmodule ParallelTreeWalk do
   @others
 end
 </t>
-<t tx="tbuttler.20180908232152.2">@language unknown_language
+<t tx="tbuttler.20180908232152.2">@language elixir
 defmodule ParallelTreeWalk.ProcDir do
   require Logger
   
@@ -346,7 +344,6 @@ end
 </t>
 <t tx="tbuttler.20181125204159.1">@path test
 </t>
-<t tx="tbuttler.20181125204226.1"></t>
 <t tx="tbuttler.20181125204226.2">@language elixir
 defmodule ParallelTreeWalkTest do
   use ExUnit.Case
@@ -375,7 +372,6 @@ defmodule ParallelTreeWalkTest do
 
 end
 </t>
-<t tx="tbuttler.20181125204226.3"></t>
 <t tx="tbuttler.20181125204226.4">@language elixir
 ExUnit.start()
 
