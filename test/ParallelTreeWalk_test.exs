@@ -1,4 +1,4 @@
-module ParallelTreeWalkTest do
+defmodule ParallelTreeWalkTest do
   use ExUnit.Case
 
   test "stub for first travis ci" do
