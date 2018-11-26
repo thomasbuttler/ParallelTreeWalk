@@ -12,8 +12,8 @@
 <v t="tbuttler.20180908205248.2"><vh>@clean README.md</vh>
 <v t="tbuttler.20180908205248.3"><vh>ParallelTreeWalk</vh></v>
 </v>
-<v t="tbuttler.20181125204114.1"><vh>lib</vh>
-<v t="tbuttler.20180908211411.2"><vh>@clean parallel_tree_walk.ex</vh>
+<v t="tbuttler.20181125204114.1" a="E"><vh>lib</vh>
+<v t="tbuttler.20180908211411.2" a="E"><vh>@clean parallel_tree_walk.ex</vh>
 <v t="tbuttler.20180908232353.1"><vh>defp pool_name()</vh></v>
 <v t="tbuttler.20180908232425.1"><vh>start(_type, _args)</vh></v>
 <v t="tbuttler.20180908232444.1"><vh>procdir(path_name)</vh></v>
@@ -27,7 +27,7 @@
 <v t="tbuttler.20180908232955.1"><vh>def handle_call(dir_data, _from, state)</vh></v>
 <v t="tbuttler.20180908233001.1"><vh>def procdir(pid, dir_data)</vh></v>
 </v>
-<v t="tbuttler.20180908232152.2"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
+<v t="tbuttler.20180908232152.2" a="E"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
 <v t="tbuttler.20180908233156.1"><vh>procdir(data = {path_name, major, _proc_entry, _proc_filter})</vh></v>
 <v t="tbuttler.20180908233204.1"><vh>procdir({path_name, major, proc_entry, proc_filter}, file_stat)</vh></v>
 <v t="tbuttler.20180908233233.1"><vh>use Bitwise</vh></v>
@@ -352,12 +352,19 @@ defmodule ParallelTreeWalkTest do
 
   test "basic traversal works" do
     test_files = ["test/dir/a.txt", "test/dir/b.txt", "test/dir/badlink", "test/dir/c/d/f.txt", "test/dir/goodlink"]
-    {:ok, walker} = DirWalker.start_link("test/dir")
-    files = DirWalker.next(walker, 99)
+    {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
+    filter_entry = fn(_name) -&gt; true end      # accept all, for this test
+    store = :ets.new(test_store, [])
+    proc_entry = fn(name, _stat) -&gt;
+      :ets.insert(store, {name})
+    end
+    ParallelTreeWalk.procdir("test/dir", major, proc_entry, filter_entry)
+    ParallelTreeWalk.wait_for_empty_poolboy()
+    files = for {n} -&gt; :ets.match_object(store, :_) do n end
+    :ets.delete(store)
     assert length(files) == 5
     assert Enum.sort(files) == Enum.sort(test_files)
   end
-
 
 end
 </t>
