@@ -21,13 +21,13 @@
 <v t="tbuttler.20180909003721.1"><vh>main(_)</vh></v>
 <v t="tbuttler.20180915033213.1"><vh>wait_until_finished()</vh></v>
 </v>
-<v t="tbuttler.20180908232152.4"><vh>@clean parallel_tree_walk/worker.ex</vh>
+<v t="tbuttler.20180908232152.4" a="E"><vh>@clean parallel_tree_walk/worker.ex</vh>
 <v t="tbuttler.20180908232939.1"><vh>def start_link([])</vh></v>
 <v t="tbuttler.20180908232947.1"><vh>def init(state)</vh></v>
 <v t="tbuttler.20180908232955.1"><vh>def handle_call(dir_data, _from, state)</vh></v>
 <v t="tbuttler.20180908233001.1"><vh>def procdir(pid, dir_data)</vh></v>
 </v>
-<v t="tbuttler.20180908232152.2"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
+<v t="tbuttler.20180908232152.2" a="E"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
 <v t="tbuttler.20180908233156.1"><vh>procdir(data = {path_name, major, _proc_entry, _proc_filter})</vh></v>
 <v t="tbuttler.20180908233204.1"><vh>procdir({path_name, major, proc_entry, proc_filter}, file_stat)</vh></v>
 <v t="tbuttler.20180908233233.1"><vh>use Bitwise</vh></v>
@@ -243,7 +243,7 @@ end
     _      -&gt;
       case file_stat do
       %File.Stat{type: :directory} -&gt;
-        case retry(fn() -&gt; :file.list_dir_all(path_name) end, 0, 10) do
+        case retry(fn() -&gt; File.ls(path_name) end, 0, 10) do
           # note recursion to top level of module, where pool checkin/checkout occur
           {:ok, entries} -&gt;
             for entry &lt;- entries, proc_filter.(entry), do:
@@ -365,11 +365,31 @@ defmodule ParallelTreeWalkTest do
     ParallelTreeWalk.procdir(path_name, major, proc_entry, filter_entry)
     ParallelTreeWalk.wait_until_finished()
     files = for {n,_} &lt;- :ets.match_object(store, {:_,:_}) do
-      IO.puts("#{n}")
       n
     end
     :ets.delete(store)
     assert length(files) == 9
+    assert Enum.sort(files) == Enum.sort(test_files)
+  end
+
+  test "filter works" do
+    path_name = "test/dir"
+    test_files = ["test/dir", "test/dir/a.txt", "test/dir/b.txt", "test/dir/badlink", "test/dir/goodlink"]
+    {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
+    filter_entry = fn(name) -&gt;
+      name != "c"
+    end      # accept all, for this test
+    store = :ets.new(:store, [:public])
+    proc_entry = fn(name, _stat) -&gt;
+      :ets.insert(store, {name, 1})
+    end
+    ParallelTreeWalk.procdir(path_name, major, proc_entry, filter_entry)
+    ParallelTreeWalk.wait_until_finished()
+    files = for {n,_} &lt;- :ets.match_object(store, {:_,:_}) do
+      n
+    end
+    :ets.delete(store)
+    assert length(files) == 5
     assert Enum.sort(files) == Enum.sort(test_files)
   end
 

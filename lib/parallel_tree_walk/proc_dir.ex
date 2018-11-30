@@ -26,7 +26,7 @@ defmodule ParallelTreeWalk.ProcDir do
       _      ->
         case file_stat do
         %File.Stat{type: :directory} ->
-          case retry(fn() -> :file.list_dir_all(path_name) end, 0, 10) do
+          case retry(fn() -> File.ls(path_name) end, 0, 10) do
             # note recursion to top level of module, where pool checkin/checkout occur
             {:ok, entries} ->
               for entry <- entries, proc_filter.(entry), do:
