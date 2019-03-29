@@ -15,7 +15,7 @@ Run with:
 * iex(1)> ParallelTreeWalk.procdir(".")
 * ...or...
 * mix escript.build
-* ./parallel_tree_walk
+* ./parallel_tree_walk .
 
 *HOWEVER*: the runnable stuff is just an example; one will want to write functions to operate on the files delivered by the library.  The important entry point is
 
