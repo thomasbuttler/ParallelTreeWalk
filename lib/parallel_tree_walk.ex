@@ -10,7 +10,7 @@ defmodule ParallelTreeWalk do
     poolboy_config = [
       {:name, {:local, pool_name()}},
       {:worker_module, ParallelTreeWalk.Worker},
-      {:size, :erlang.system_info(:thread_pool_size)},
+      {:size, :erlang.system_info(:thread_pool_size)-1},
       {:max_overflow, 0}
     ]
 
@@ -44,28 +44,34 @@ defmodule ParallelTreeWalk do
     case :poolboy.checkout(pool_name(), :false) do
       # :false above means do not block
       :full ->
+        # IO.puts("all threads busy, top continuing with #{path_name}")
         # all threads busy; don't deadlock, just keep going
         ParallelTreeWalk.ProcDir.procdir({path_name, major, proc_entry, filter_entry})
       # todo: change spawn to Node.spawn/4
       pid   -> spawn(fn() ->
+          # IO.puts("top invokes pool worker processing #{path_name}")
           try do
             ParallelTreeWalk.Worker.procdir(pid, {path_name, major, proc_entry, filter_entry})
           after
-            :poolboy.checkin(pool_name(), pid)
+            :ok = :poolboy.checkin(pool_name(), pid)
           end
         end)
     end
   end
 
-  def main(_) do
-    procdir(".")
+  def main(args \\ []) do
+    try do
+      procdir(List.to_string(args))
+    catch type, value ->
+      IO.puts "Error\n  #{inspect type}\n  #{inspect value}"
+    end
   end
 
   def wait_until_finished() do
     # look for 0 allocated poolboy processes
     case :poolboy.status(pool_name()) do
     {_, _, _, 0} -> :ok
-    _            -> :timer.sleep(10)
+    _            -> :timer.sleep(100)
                     wait_until_finished()
     end
   end

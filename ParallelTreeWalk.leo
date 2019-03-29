@@ -9,7 +9,7 @@
 <preferences/>
 <find_panel_settings/>
 <vnodes>
-<v t="tbuttler.20180908205248.2"><vh>@clean README.md</vh>
+<v t="tbuttler.20180908205248.2" a="E"><vh>@clean README.md</vh>
 <v t="tbuttler.20180908205248.3"><vh>ParallelTreeWalk</vh></v>
 </v>
 <v t="tbuttler.20181125204114.1" a="E"><vh>lib</vh>
@@ -46,8 +46,6 @@
 </v>
 <v t="tbuttler.20180909002850.2"><vh>@clean mix.exs</vh></v>
 <v t="tbuttler.20180909022109.1"><vh>@clean .gitignore</vh></v>
-<v t="tbuttler.20181125204226.1"><vh>Imported Files</vh></v>
-<v t="tbuttler.20181125204226.3"><vh>Imported Files</vh></v>
 </vnodes>
 <tnodes>
 <t tx="tbuttler.20180908205248.2">@others
@@ -147,7 +145,7 @@ end
   poolboy_config = [
     {:name, {:local, pool_name()}},
     {:worker_module, ParallelTreeWalk.Worker},
-    {:size, :erlang.system_info(:thread_pool_size)},
+    {:size, :erlang.system_info(:thread_pool_size)-1},
     {:max_overflow, 0}
   ]
 
@@ -183,14 +181,16 @@ end
   case :poolboy.checkout(pool_name(), :false) do
     # :false above means do not block
     :full -&gt;
+      # IO.puts("all threads busy, top continuing with #{path_name}")
       # all threads busy; don't deadlock, just keep going
       ParallelTreeWalk.ProcDir.procdir({path_name, major, proc_entry, filter_entry})
     # todo: change spawn to Node.spawn/4
     pid   -&gt; spawn(fn() -&gt;
+        # IO.puts("top invokes pool worker processing #{path_name}")
         try do
           ParallelTreeWalk.Worker.procdir(pid, {path_name, major, proc_entry, filter_entry})
         after
-          :poolboy.checkin(pool_name(), pid)
+          :ok = :poolboy.checkin(pool_name(), pid)
         end
       end)
   end
@@ -218,7 +218,7 @@ end
 end
 </t>
 <t tx="tbuttler.20180908233156.1">def procdir(data = {path_name, major, _proc_entry, _proc_filter}) do
-  case retry(fn() -&gt; File.lstat(path_name) end, 0, 10) do
+  case retry(fn() -&gt; File.lstat(path_name, [{:time, :posix}]) end, 0, 10) do
     {:ok, file_stat} -&gt;
       case file_stat do
         %File.Stat{major_device: ^major} -&gt;
@@ -233,6 +233,7 @@ end
       end
     result           -&gt;
       Logger.warn("File.lstat of #{path_name} repeatedly failed: #{inspect(result)}")
+      :ok
   end    
 end
 
@@ -246,10 +247,14 @@ end
         case retry(fn() -&gt; File.ls(path_name) end, 0, 10) do
           # note recursion to top level of module, where pool checkin/checkout occur
           {:ok, entries} -&gt;
-            for entry &lt;- entries, proc_filter.(entry), do:
-              ParallelTreeWalk.procdir(Path.join(path_name,entry), major, proc_entry, proc_filter)
+            # IO.puts("PTW.ProcDir.procdir/2 with #{path_name} processing #{entries}")
+            for entry &lt;- entries, proc_filter.(entry) do
+              new_path = Path.join(path_name,entry)
+              ParallelTreeWalk.procdir(new_path, major, proc_entry, proc_filter)
+            end
           result         -&gt;
-            Logger.warn(":file.list_dir_all of #{path_name} repeatedly failed: #{inspect(result)}")
+            Logger.warn("File.ls of #{path_name} repeatedly failed: #{inspect(result)}")
+            :ok
         end
       _ -&gt; :finished_with_non_directory
     end
@@ -322,8 +327,12 @@ defmodule ParallelTreeWalk.Mixfile do
 
 end
 </t>
-<t tx="tbuttler.20180909003721.1">def main(_) do
-  procdir(".")
+<t tx="tbuttler.20180909003721.1">def main(args \\ []) do
+  try do
+    procdir(List.to_string(args))
+  catch type, value -&gt;
+    IO.puts "Error\n  #{inspect type}\n  #{inspect value}"
+  end
 end
 
 </t>
@@ -336,7 +345,7 @@ mix.lock
   # look for 0 allocated poolboy processes
   case :poolboy.status(pool_name()) do
   {_, _, _, 0} -&gt; :ok
-  _            -&gt; :timer.sleep(10)
+  _            -&gt; :timer.sleep(100)
                   wait_until_finished()
   end
 end
@@ -346,14 +355,13 @@ end
 </t>
 <t tx="tbuttler.20181125204159.1">@path test
 </t>
-<t tx="tbuttler.20181125204226.1"></t>
 <t tx="tbuttler.20181125204226.2">@language elixir
 defmodule ParallelTreeWalkTest do
   use ExUnit.Case
 
   test "basic traversal works" do
     path_name = "test/dir"
-    test_files = ["test/dir", "test/dir/a.txt", "test/dir/b.txt", "test/dir/badlink", "test/dir/c", "test/dir/c/d", "test/dir/c/d/e", "test/dir/c/d/f.txt", "test/dir/goodlink"]
+    test_files = ["test/dir", "test/dir/a.txt", "test/dir/b.txt", "test/dir/badlink", "test/dir/c", "test/dir/c/d", "test/dir/c/d/e", "test/dir/c/d/f.txt", "test/dir/goodlink", "test/dir/dirlink"]
     {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
     filter_entry = fn(_name) -&gt;
       true
@@ -368,17 +376,17 @@ defmodule ParallelTreeWalkTest do
       n
     end
     :ets.delete(store)
-    assert length(files) == 9
+    assert length(files) == 10
     assert Enum.sort(files) == Enum.sort(test_files)
   end
 
   test "filter works" do
     path_name = "test/dir"
-    test_files = ["test/dir", "test/dir/a.txt", "test/dir/b.txt", "test/dir/badlink", "test/dir/goodlink"]
+    test_files = ["test/dir", "test/dir/a.txt", "test/dir/b.txt", "test/dir/badlink", "test/dir/goodlink", "test/dir/dirlink"]
     {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
     filter_entry = fn(name) -&gt;
       name != "c"
-    end      # accept all, for this test
+    end      # accept all except for name "c", for this test
     store = :ets.new(:store, [:public])
     proc_entry = fn(name, _stat) -&gt;
       :ets.insert(store, {name, 1})
@@ -389,13 +397,12 @@ defmodule ParallelTreeWalkTest do
       n
     end
     :ets.delete(store)
-    assert length(files) == 5
+    assert length(files) == 6
     assert Enum.sort(files) == Enum.sort(test_files)
   end
 
 end
 </t>
-<t tx="tbuttler.20181125204226.3"></t>
 <t tx="tbuttler.20181125204226.4">@language elixir
 ExUnit.start()
 
