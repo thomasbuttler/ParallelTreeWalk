@@ -12,8 +12,9 @@
 <v t="tbuttler.20180908205248.2" a="E"><vh>@clean README.md</vh>
 <v t="tbuttler.20180908205248.3"><vh>ParallelTreeWalk</vh></v>
 </v>
-<v t="tbuttler.20181125204114.1" a="E"><vh>lib</vh>
-<v t="tbuttler.20180908211411.2" a="E"><vh>@clean parallel_tree_walk.ex</vh>
+
+<v t="tbuttler.20181125204114.1"><vh>lib</vh>
+<v t="tbuttler.20180908211411.2"><vh>@clean parallel_tree_walk.ex</vh>
 <v t="tbuttler.20180908232353.1"><vh>defp pool_name()</vh></v>
 <v t="tbuttler.20180908232425.1"><vh>start(_type, _args)</vh></v>
 <v t="tbuttler.20180908232444.1"><vh>procdir(path_name)</vh></v>
@@ -21,13 +22,13 @@
 <v t="tbuttler.20180909003721.1"><vh>main(_)</vh></v>
 <v t="tbuttler.20180915033213.1"><vh>wait_until_finished()</vh></v>
 </v>
-<v t="tbuttler.20180908232152.4" a="E"><vh>@clean parallel_tree_walk/worker.ex</vh>
+<v t="tbuttler.20180908232152.4"><vh>@clean parallel_tree_walk/worker.ex</vh>
 <v t="tbuttler.20180908232939.1"><vh>def start_link([])</vh></v>
 <v t="tbuttler.20180908232947.1"><vh>def init(state)</vh></v>
 <v t="tbuttler.20180908232955.1"><vh>def handle_call(dir_data, _from, state)</vh></v>
 <v t="tbuttler.20180908233001.1"><vh>def procdir(pid, dir_data)</vh></v>
 </v>
-<v t="tbuttler.20180908232152.2" a="E"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
+<v t="tbuttler.20180908232152.2"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
 <v t="tbuttler.20180908233156.1"><vh>procdir(data = {path_name, major, _proc_entry, _proc_filter})</vh></v>
 <v t="tbuttler.20180908233204.1"><vh>procdir({path_name, major, proc_entry, proc_filter}, file_stat)</vh></v>
 <v t="tbuttler.20180908233233.1"><vh>use Bitwise</vh></v>
@@ -35,7 +36,7 @@
 <v t="tbuttler.20180908233220.1"><vh>defp retry(to_retry, _, _)</vh></v>
 </v>
 </v>
-<v t="tbuttler.20181125204159.1" a="E"><vh>test</vh>
+<v t="tbuttler.20181125204159.1"><vh>test</vh>
 <v t="tbuttler.20181125204226.2"><vh>@clean ParallelTreeWalk_test.exs</vh></v>
 <v t="tbuttler.20181125204226.4"><vh>@clean test_helper.exs</vh></v>
 <v t="tbuttler.20181125204539.1"><vh>dir</vh>
@@ -93,6 +94,8 @@ where
     * true for things to be processed
     * :false otherwise; use it to prune the tree by file name, e.g., to skip ".git" directories.
 
+Test Status: [![Build Status](https://travis-ci.org/thomasbuttler/ParallelTreeWalk.svg?branch=master)](https://travis-ci.org/thomasbuttler/ParallelTreeWalk)
+
 To Do:
 
 * develop command line processing (or start a separate command line application)
@@ -121,7 +124,7 @@ defmodule ParallelTreeWalk do
   @others
 end
 </t>
-<t tx="tbuttler.20180908232152.2">@language unknown_language
+<t tx="tbuttler.20180908232152.2">@language elixir
 defmodule ParallelTreeWalk.ProcDir do
   require Logger
   
