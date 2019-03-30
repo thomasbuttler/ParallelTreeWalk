@@ -2,7 +2,7 @@ defmodule ParallelTreeWalk.ProcDir do
   require Logger
   
   def procdir(data = {path_name, major, _proc_entry, _proc_filter}) do
-    case retry(fn() -> File.lstat(path_name) end, 0, 10) do
+    case retry(fn() -> File.lstat(path_name, [{:time, :posix}]) end, 0, 10) do
       {:ok, file_stat} ->
         case file_stat do
           %File.Stat{major_device: ^major} ->
@@ -17,6 +17,7 @@ defmodule ParallelTreeWalk.ProcDir do
         end
       result           ->
         Logger.warn("File.lstat of #{path_name} repeatedly failed: #{inspect(result)}")
+        :ok
     end    
   end
 
@@ -26,13 +27,17 @@ defmodule ParallelTreeWalk.ProcDir do
       _      ->
         case file_stat do
         %File.Stat{type: :directory} ->
-          case retry(fn() -> :file.list_dir_all(path_name) end, 0, 10) do
+          case retry(fn() -> File.ls(path_name) end, 0, 10) do
             # note recursion to top level of module, where pool checkin/checkout occur
             {:ok, entries} ->
-              for entry <- entries, proc_filter.(entry), do:
-                ParallelTreeWalk.procdir(Path.join(path_name,entry), major, proc_entry, proc_filter)
+              # IO.puts("PTW.ProcDir.procdir/2 with #{path_name} processing #{entries}")
+              for entry <- entries, proc_filter.(entry) do
+                new_path = Path.join(path_name,entry)
+                ParallelTreeWalk.procdir(new_path, major, proc_entry, proc_filter)
+              end
             result         ->
-              Logger.warn(":file.list_dir_all of #{path_name} repeatedly failed: #{inspect(result)}")
+              Logger.warn("File.ls of #{path_name} repeatedly failed: #{inspect(result)}")
+              :ok
           end
         _ -> :finished_with_non_directory
       end
