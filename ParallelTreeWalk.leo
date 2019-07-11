@@ -9,10 +9,9 @@
 <preferences/>
 <find_panel_settings/>
 <vnodes>
-<v t="tbuttler.20180908205248.2" a="E"><vh>@clean README.md</vh>
+<v t="tbuttler.20180908205248.2"><vh>@clean README.md</vh>
 <v t="tbuttler.20180908205248.3"><vh>ParallelTreeWalk</vh></v>
 </v>
-
 <v t="tbuttler.20181125204114.1"><vh>lib</vh>
 <v t="tbuttler.20180908211411.2"><vh>@clean parallel_tree_walk.ex</vh>
 <v t="tbuttler.20180908232353.1"><vh>defp pool_name()</vh></v>
@@ -70,7 +69,7 @@ Run with:
 * iex(1)&gt; ParallelTreeWalk.procdir(".")
 * ...or...
 * mix escript.build
-* ./parallel_tree_walk
+* ./parallel_tree_walk .
 
 *HOWEVER*: the runnable stuff is just an example; one will want to write functions to operate on the files delivered by the library.  The important entry point is
 
@@ -310,7 +309,10 @@ defmodule ParallelTreeWalk.Mixfile do
 
   
   def escript do
-    [main_module: ParallelTreeWalk]
+    [
+      main_module: ParallelTreeWalk,
+      emu_args:    "+A32"
+    ]
   end
   
   # Dependencies can be Hex packages:
