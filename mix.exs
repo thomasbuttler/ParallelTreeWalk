@@ -24,7 +24,10 @@ defmodule ParallelTreeWalk.Mixfile do
 
   
   def escript do
-    [main_module: ParallelTreeWalk]
+    [
+      main_module: ParallelTreeWalk,
+      emu_args:    "+A32"
+    ]
   end
   
   # Dependencies can be Hex packages:
