@@ -1,6 +1,15 @@
 defmodule ParallelTreeWalk.ProcDir do
   require Logger
   
+  @moduledoc """
+  Implementation of directory tree processing.
+  """
+@doc """
+  ParallelTreeWalk.ProcDir.procdir invokes the File.lstat/2 call,
+  then optionally use the result to prevent crossingmountpoints.
+  File.lstat/2 is wrapped in ParallelTreeWalk.ProcDir.retry/3 to
+  skip ephemeral errors.
+  """
   def procdir(data = {path_name, major, _proc_entry, _proc_filter}) do
     case retry(fn() -> File.lstat(path_name, [{:time, :posix}]) end, 0, 10) do
       {:ok, file_stat} ->
@@ -21,6 +30,11 @@ defmodule ParallelTreeWalk.ProcDir do
     end    
   end
 
+@doc """
+  ParallelTreeWalk.ProcDir.procdir/2 invokes the supplied entry processing,
+  and, in the case that the entry is a directory, recurses into processing
+  the directory's entries.
+  """
   def procdir({path_name, major, proc_entry, proc_filter}, file_stat) do
     case proc_entry.(path_name, file_stat) do
       :false -> :pruned
@@ -46,6 +60,8 @@ defmodule ParallelTreeWalk.ProcDir do
 
   use Bitwise # for left shift operator <<<
 
+  # Attempt, with exponential backoff, to run the
+  # supplied function.
   defp retry(to_retry, count, max) when count < max do
     result = to_retry.()
     case result do
@@ -55,6 +71,7 @@ defmodule ParallelTreeWalk.ProcDir do
     end
   end
 
+  # When the count has exceeded its max, try one last time.
   defp retry(to_retry, _, _) do
     # one last time
     to_retry.()

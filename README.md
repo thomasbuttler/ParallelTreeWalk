@@ -45,6 +45,9 @@ To Do:
 
 * develop command line processing (or start a separate command line application)
 * develop chmod and chown examples
+* improve @moduledoc, @doc
+* provide @spec
+* replace spawn/1 with Node.spawn/4
 
 NOTES:
 ------
