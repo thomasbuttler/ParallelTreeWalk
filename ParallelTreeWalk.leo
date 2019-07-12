@@ -97,7 +97,7 @@ Test Status: [![Build Status](https://travis-ci.org/thomasbuttler/ParallelTreeWa
 
 Current Best Example
 --------------------
-[FixId](https://github.com/thomasbuttler/FixId): a chown/chgrp utitlity
+[FixId](https://github.com/thomasbuttler/FixId): a chown/chgrp utility
 
 To Do
 -----
