@@ -1,26 +1,26 @@
 defmodule ParallelTreeWalk.Worker do
   use GenServer
-  
+
   @moduledoc """
   ParallelTreeWalk.Worker provides the callbacks that allow
   processing of directory in a BEAM process managed by :poolboy
   """
 
-@doc """
+  @doc """
   start_link/1 invoked by :poolboy, a wrapper for :gen_server.start_link/3
   """
   def start_link([]) do
     :gen_server.start_link(__MODULE__, [], [])
   end
 
-@doc """
+  @doc """
   Process initialization invoked by :poolboy
   """
   def init(state) do
     {:ok, state}
   end
 
-@doc """
+  @doc """
   handle_call/3 invoked by :poolboy
   """
   def handle_call(dir_data, _from, state) do
@@ -28,7 +28,7 @@ defmodule ParallelTreeWalk.Worker do
     {:reply, [], state}
   end
 
-@doc """
+  @doc """
   procdir/2 invoked by :poolboy
   """
   def procdir(pid, dir_data) do
