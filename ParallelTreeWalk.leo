@@ -99,6 +99,9 @@ To Do:
 
 * develop command line processing (or start a separate command line application)
 * develop chmod and chown examples
+* improve @moduledoc, @doc
+* provide @spec
+* replace spawn/1 with Node.spawn/4
 
 NOTES:
 ------
@@ -120,34 +123,53 @@ NOTES:
 defmodule ParallelTreeWalk do
   use Application
 
+  @moduledoc """
+  Provides a means to process a directory tree in parallel.  Useful
+  when file system I/O is about 100 times slower than processing, e.g.,
+  with NFS.
+  """
+
   @others
 end
 </t>
 <t tx="tbuttler.20180908232152.2">@language elixir
 defmodule ParallelTreeWalk.ProcDir do
   require Logger
-  
-  @others
 
+  @moduledoc """
+  Implementation of directory tree processing.
+  """
+  @others
 end
 </t>
 <t tx="tbuttler.20180908232152.4">@language elixir
 defmodule ParallelTreeWalk.Worker do
   use GenServer
 
+  @moduledoc """
+  ParallelTreeWalk.Worker provides the callbacks that allow
+  processing of directory in a BEAM process managed by :poolboy
+  """
+
   @others
 end
 </t>
-<t tx="tbuttler.20180908232353.1">defp pool_name() do
+<t tx="tbuttler.20180908232353.1"># Provides a separate management space for :poolboy
+defp pool_name() do
   :parallel_tree_walk_pool
 end
 
 </t>
-<t tx="tbuttler.20180908232425.1">def start(_type, _args) do
+<t tx="tbuttler.20180908232425.1">@raw
+  @doc """
+@end_raw
+Entry point for the Elixir Application
+"""
+def start(_type, _args) do
   poolboy_config = [
     {:name, {:local, pool_name()}},
     {:worker_module, ParallelTreeWalk.Worker},
-    {:size, :erlang.system_info(:thread_pool_size)-1},
+    {:size, :erlang.system_info(:thread_pool_size) - 1},
     {:max_overflow, 0}
   ]
 
@@ -164,122 +186,209 @@ end
 end
 
 </t>
-<t tx="tbuttler.20180908232444.1"># major device numbers are unique to the file system, and minor numbers are always zero,
-# *except* when the file is a device (block or character).  Practically, it means we can
-# use a difference in the major device number of directories to identify a mount point.
-def procdir(path_name) do # /1 example
+<t tx="tbuttler.20180908232444.1">@raw
+  @doc """
+@end_raw
+An example use of procdir/4
+
+Major device numbers are unique to the file system, and minor numbers are always zero,
+*except* when the file is a device (block or character).  Practically, it means we can
+use a difference in the major device number of directories to identify a mount point.
+"""
+def procdir(path_name) do
   {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
-  proc_entry = fn(name, _stat) -&gt;
+
+  proc_entry = fn name, _stat -&gt;
     IO.puts("#{name}")
     true
   end
-  filter_entry = fn(_name) -&gt; true end      # accept all, for this demo
+
+  # accept all, for this demo
+  filter_entry = fn _name -&gt; true end
   procdir(path_name, major, proc_entry, filter_entry)
   wait_until_finished()
 end
 
 </t>
-<t tx="tbuttler.20180908232512.1">def procdir(path_name, major, proc_entry, filter_entry) do # /4 version
-  case :poolboy.checkout(pool_name(), :false) do
-    # :false above means do not block
-    :full -&gt;
-      # IO.puts("all threads busy, top continuing with #{path_name}")
-      # all threads busy; don't deadlock, just keep going
-      ParallelTreeWalk.ProcDir.procdir({path_name, major, proc_entry, filter_entry})
-    # todo: change spawn to Node.spawn/4
-    pid   -&gt; spawn(fn() -&gt;
-        # IO.puts("top invokes pool worker processing #{path_name}")
-        try do
-          ParallelTreeWalk.Worker.procdir(pid, {path_name, major, proc_entry, filter_entry})
-        after
-          :ok = :poolboy.checkin(pool_name(), pid)
-        end
-      end)
+<t tx="tbuttler.20180908232512.1">@raw
+  @doc """
+@end_raw
+  Primary entry point to ParallelTreeWalk.
+
+  ## Arguments
+    - path_name: file system path name to the first item to process.  Usually a directory,
+      but won't fail with a file
+
+    - major: false if you want to traverse mount points, otherwise the major device number
+      returned by an lstat() call on path_name
+
+    - proc_entry: a function called with two arguments: the path name of the entry being
+      processed; and the %File.Stat map returned by lstat() on that entry
+
+    - filter_entry: a function which takes the last component of the file path, and returns
+      true if it should be processed, or false if not.  "." and ".." are implicitly filtered.
+      This can be used to skip, e.g., directories named ".backup"
+
+  ## Exmaple
+    See procdir/1, defined in this file.
+  """
+  def procdir(path_name, major, proc_entry, filter_entry) do
+    case :poolboy.checkout(pool_name(), false) do
+      # :false above means do not block
+      :full -&gt;
+        # IO.puts("all threads busy, top continuing with #{path_name}")
+        # all threads busy; don't deadlock, just keep going
+        ParallelTreeWalk.ProcDir.procdir({path_name, major, proc_entry, filter_entry})
+
+      # todo: change spawn to Node.spawn/4
+      pid -&gt;
+        spawn(fn -&gt;
+          # IO.puts("top invokes pool worker processing #{path_name}")
+          try do
+            ParallelTreeWalk.Worker.procdir(pid, {path_name, major, proc_entry, filter_entry})
+          after
+            :ok = :poolboy.checkin(pool_name(), pid)
+          end
+        end)
+    end
   end
-end
 
 </t>
-<t tx="tbuttler.20180908232939.1">def start_link([]) do
+<t tx="tbuttler.20180908232939.1">@raw
+  @doc """
+@end_raw
+start_link/1 invoked by :poolboy, a wrapper for :gen_server.start_link/3
+"""
+def start_link([]) do
   :gen_server.start_link(__MODULE__, [], [])
 end
 
 </t>
-<t tx="tbuttler.20180908232947.1">def init(state) do
+<t tx="tbuttler.20180908232947.1">@raw
+  @doc """
+@end_raw
+Process initialization invoked by :poolboy
+"""
+def init(state) do
   {:ok, state}
 end
 
 </t>
-<t tx="tbuttler.20180908232955.1">def handle_call(dir_data, _from, state) do
+<t tx="tbuttler.20180908232955.1">@raw
+  @doc """
+@end_raw
+handle_call/3 invoked by :poolboy
+"""
+def handle_call(dir_data, _from, state) do
   ParallelTreeWalk.ProcDir.procdir(dir_data)
   {:reply, [], state}
 end
 
 </t>
-<t tx="tbuttler.20180908233001.1">def procdir(pid, dir_data) do
+<t tx="tbuttler.20180908233001.1">@raw
+  @doc """
+@end_raw
+procdir/2 invoked by :poolboy
+"""
+def procdir(pid, dir_data) do
   :gen_server.call(pid, dir_data)
 end
 </t>
-<t tx="tbuttler.20180908233156.1">def procdir(data = {path_name, major, _proc_entry, _proc_filter}) do
-  case retry(fn() -&gt; File.lstat(path_name, [{:time, :posix}]) end, 0, 10) do
+<t tx="tbuttler.20180908233156.1">@raw
+  @doc """
+@end_raw
+ParallelTreeWalk.ProcDir.procdir invokes the File.lstat/2 call,
+then optionally use the result to prevent crossingmountpoints.
+File.lstat/2 is wrapped in ParallelTreeWalk.ProcDir.retry/3 to
+skip ephemeral errors.
+"""
+def procdir(data = {path_name, major, _proc_entry, _proc_filter}) do
+  case retry(fn -&gt; File.lstat(path_name, [{:time, :posix}]) end, 0, 10) do
     {:ok, file_stat} -&gt;
       case file_stat do
         %File.Stat{major_device: ^major} -&gt;
           procdir(data, file_stat)
-        %File.Stat{type: :directory}     -&gt;
+
+        %File.Stat{type: :directory} -&gt;
           case major do
-            false -&gt; procdir(data, file_stat) # caller wants to cross file system boundaries
-            _     -&gt; :will_not_cross_mount_points
+            # caller wants to cross file system boundaries
+            false -&gt; procdir(data, file_stat)
+            _ -&gt; :will_not_cross_mount_points
           end
-        _                                -&gt;
-          procdir(data, file_stat) # still process device with differing major
+
+        _ -&gt;
+          # still process device with differing major
+          procdir(data, file_stat)
       end
-    result           -&gt;
+
+    result -&gt;
       Logger.warn("File.lstat of #{path_name} repeatedly failed: #{inspect(result)}")
       :ok
-  end    
+  end
 end
 
 </t>
-<t tx="tbuttler.20180908233204.1">def procdir({path_name, major, proc_entry, proc_filter}, file_stat) do
+<t tx="tbuttler.20180908233204.1">@raw
+  @doc """
+@end_raw
+ParallelTreeWalk.ProcDir.procdir/2 invokes the supplied entry processing,
+and, in the case that the entry is a directory, recurses into processing
+the directory's entries.
+"""
+def procdir({path_name, major, proc_entry, proc_filter}, file_stat) do
   case proc_entry.(path_name, file_stat) do
-    :false -&gt; :pruned
-    _      -&gt;
+    false -&gt;
+      :pruned
+
+    _ -&gt;
       case file_stat do
-      %File.Stat{type: :directory} -&gt;
-        case retry(fn() -&gt; File.ls(path_name) end, 0, 10) do
-          # note recursion to top level of module, where pool checkin/checkout occur
-          {:ok, entries} -&gt;
-            # IO.puts("PTW.ProcDir.procdir/2 with #{path_name} processing #{entries}")
-            for entry &lt;- entries, proc_filter.(entry) do
-              new_path = Path.join(path_name,entry)
-              ParallelTreeWalk.procdir(new_path, major, proc_entry, proc_filter)
-            end
-          result         -&gt;
-            Logger.warn("File.ls of #{path_name} repeatedly failed: #{inspect(result)}")
-            :ok
-        end
-      _ -&gt; :finished_with_non_directory
-    end
+        %File.Stat{type: :directory} -&gt;
+          case retry(fn -&gt; File.ls(path_name) end, 0, 10) do
+            # note recursion to top level of module, where pool checkin/checkout occur
+            {:ok, entries} -&gt;
+              # IO.puts("PTW.ProcDir.procdir/2 with #{path_name} processing #{entries}")
+              for entry &lt;- entries, proc_filter.(entry) do
+                new_path = Path.join(path_name, entry)
+                ParallelTreeWalk.procdir(new_path, major, proc_entry, proc_filter)
+              end
+
+            result -&gt;
+              Logger.warn("File.ls of #{path_name} repeatedly failed: #{inspect(result)}")
+              :ok
+          end
+
+        _ -&gt;
+          :finished_with_non_directory
+      end
   end
 end
 
 </t>
-<t tx="tbuttler.20180908233215.1">defp retry(to_retry, count, max) when count &lt; max do
+<t tx="tbuttler.20180908233215.1"># Attempt, with exponential backoff, to run the
+# supplied function.
+defp retry(to_retry, count, max) when count &lt; max do
   result = to_retry.()
+
   case result do
-    {:ok, _data} -&gt; result
-    _            -&gt; :timer.sleep(1 &lt;&lt;&lt; count) # milliseconds
-                    retry(to_retry, count+1, max)
+    {:ok, _data} -&gt;
+      result
+
+    # milliseconds
+    _ -&gt;
+      :timer.sleep(1 &lt;&lt;&lt; count)
+      retry(to_retry, count + 1, max)
   end
 end
 
 </t>
-<t tx="tbuttler.20180908233220.1">defp retry(to_retry, _, _) do
+<t tx="tbuttler.20180908233220.1"># When the count has exceeded its max, try one last time.
+defp retry(to_retry, _, _) do
   # one last time
   to_retry.()
 end
 </t>
-<t tx="tbuttler.20180908233233.1">use Bitwise # for left shift operator &lt;&lt;&lt;
+<t tx="tbuttler.20180908233233.1"># for left shift operator &lt;&lt;&lt;
+use Bitwise
 
 </t>
 <t tx="tbuttler.20180909002850.2">@language unknown_language
@@ -332,11 +441,20 @@ defmodule ParallelTreeWalk.Mixfile do
 
 end
 </t>
-<t tx="tbuttler.20180909003721.1">def main(args \\ []) do
+<t tx="tbuttler.20180909003721.1">@raw
+  @doc """
+@end_raw
+Entry point for escript version.
+
+## Arguments
+  - args: a list of strings, usually tokenized by invocation from the command line
+"""
+def main(args \\ []) do
   try do
     procdir(List.to_string(args))
-  catch type, value -&gt;
-    IO.puts "Error\n  #{inspect type}\n  #{inspect value}"
+  catch
+    type, value -&gt;
+      IO.puts("Error\n  #{inspect(type)}\n  #{inspect(value)}")
   end
 end
 
@@ -346,15 +464,24 @@ deps
 mix.lock
 /parallel_tree_walk
 </t>
-<t tx="tbuttler.20180915033213.1">def wait_until_finished() do
+<t tx="tbuttler.20180915033213.1">@raw
+  @doc """
+@end_raw
+Usually, you don't want to exit or otherwise proceed until the
+directory tree processing has finished.  wait_until_finished/0
+waits until that is the case, and returns :ok
+"""
+def wait_until_finished() do
   # look for 0 allocated poolboy processes
   case :poolboy.status(pool_name()) do
-  {_, _, _, 0} -&gt; :ok
-  _            -&gt; :timer.sleep(100)
-                  wait_until_finished()
+    {_, _, _, 0} -&gt;
+      :ok
+
+    _ -&gt;
+      :timer.sleep(100)
+      wait_until_finished()
   end
 end
-
 </t>
 <t tx="tbuttler.20181125204114.1">@path lib
 </t>
