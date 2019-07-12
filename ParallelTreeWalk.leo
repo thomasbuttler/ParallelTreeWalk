@@ -9,7 +9,7 @@
 <preferences/>
 <find_panel_settings/>
 <vnodes>
-<v t="tbuttler.20180908205248.2"><vh>@clean README.md</vh>
+<v t="tbuttler.20180908205248.2" a="E"><vh>@clean README.md</vh>
 <v t="tbuttler.20180908205248.3"><vh>ParallelTreeWalk</vh></v>
 </v>
 <v t="tbuttler.20181125204114.1"><vh>lib</vh>
@@ -95,10 +95,14 @@ where
 
 Test Status: [![Build Status](https://travis-ci.org/thomasbuttler/ParallelTreeWalk.svg?branch=master)](https://travis-ci.org/thomasbuttler/ParallelTreeWalk)
 
-To Do:
+Current Best Example
+--------------------
+[[FixId](https://github.com/thomasbuttler/FixId)]
 
+To Do
+-----
 * develop command line processing (or start a separate command line application)
-* develop chmod and chown examples
+* develop chown example
 * improve @moduledoc, @doc
 * provide @spec
 * replace spawn/1 with Node.spawn/4
@@ -397,13 +401,15 @@ defmodule ParallelTreeWalk.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :parallel_tree_walk,
-     version: "0.0.1",
-     elixir: "~&gt; 1.0",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     escript: escript(),
-     deps: deps()]
+    [
+      app: :parallel_tree_walk,
+      version: "0.0.1",
+      elixir: "~&gt; 1.0",
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
+      escript: escript(),
+      deps: deps()
+    ]
   end
 
   # Configuration for the OTP application
@@ -416,14 +422,13 @@ defmodule ParallelTreeWalk.Mixfile do
     ]
   end
 
-  
   def escript do
     [
       main_module: ParallelTreeWalk,
-      emu_args:    "+A32"
+      emu_args: "+A32"
     ]
   end
-  
+
   # Dependencies can be Hex packages:
   #
   #   {:mydep, "~&gt; 0.3.0"}
@@ -438,7 +443,6 @@ defmodule ParallelTreeWalk.Mixfile do
       {:poolboy, "~&gt; 1.5"}
     ]
   end
-
 end
 </t>
 <t tx="tbuttler.20180909003721.1">@raw
