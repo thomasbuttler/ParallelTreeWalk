@@ -97,12 +97,11 @@ Test Status: [![Build Status](https://travis-ci.org/thomasbuttler/ParallelTreeWa
 
 Current Best Example
 --------------------
-[[FixId](https://github.com/thomasbuttler/FixId)]
+[FixId](https://github.com/thomasbuttler/FixId): a chown/chgrp utitlity
 
 To Do
 -----
-* develop command line processing (or start a separate command line application)
-* develop chown example
+* develop chmod example
 * improve @moduledoc, @doc
 * provide @spec
 * replace spawn/1 with Node.spawn/4
