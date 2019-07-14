@@ -9,6 +9,7 @@ defmodule ParallelTreeWalk do
   """
 
   # Provides a separate management space for :poolboy
+  @spec pool_name() :: atom
   defp pool_name() do
     :parallel_tree_walk_pool
   end
@@ -16,6 +17,7 @@ defmodule ParallelTreeWalk do
   @doc """
   Entry point for the Elixir Application
   """
+  @spec start(atom, list(any)) :: {:error, any} | {:ok, pid()} | {:ok, pid(), any}
   def start(_type, _args) do
     poolboy_config = [
       {:name, {:local, pool_name()}},
@@ -43,6 +45,7 @@ defmodule ParallelTreeWalk do
   *except* when the file is a device (block or character).  Practically, it means we can
   use a difference in the major device number of directories to identify a mount point.
   """
+  @spec procdir(String.t) :: atom
   def procdir(path_name) do
     {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
 
@@ -77,6 +80,7 @@ defmodule ParallelTreeWalk do
     ## Exmaple
       See procdir/1, defined in this file.
     """
+    @spec procdir(String.t, integer(), (String.t, %File.Stat{} -> boolean), (String.t -> boolean)) :: atom
     def procdir(path_name, major, proc_entry, filter_entry) do
       case :poolboy.checkout(pool_name(), false) do
         # :false above means do not block
@@ -104,6 +108,7 @@ defmodule ParallelTreeWalk do
   ## Arguments
     - args: a list of strings, usually tokenized by invocation from the command line
   """
+  @spec main(list(String.t)) :: atom
   def main(args \\ []) do
     try do
       procdir(List.to_string(args))
@@ -118,6 +123,7 @@ defmodule ParallelTreeWalk do
   directory tree processing has finished.  wait_until_finished/0
   waits until that is the case, and returns :ok
   """
+  @spec wait_until_finished() :: atom
   def wait_until_finished() do
     # look for 0 allocated poolboy processes
     case :poolboy.status(pool_name()) do

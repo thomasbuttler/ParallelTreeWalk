@@ -12,8 +12,8 @@
 <v t="tbuttler.20180908205248.2" a="E"><vh>@clean README.md</vh>
 <v t="tbuttler.20180908205248.3"><vh>ParallelTreeWalk</vh></v>
 </v>
-<v t="tbuttler.20181125204114.1"><vh>lib</vh>
-<v t="tbuttler.20180908211411.2"><vh>@clean parallel_tree_walk.ex</vh>
+<v t="tbuttler.20181125204114.1" a="E"><vh>lib</vh>
+<v t="tbuttler.20180908211411.2" a="E"><vh>@clean parallel_tree_walk.ex</vh>
 <v t="tbuttler.20180908232353.1"><vh>defp pool_name()</vh></v>
 <v t="tbuttler.20180908232425.1"><vh>start(_type, _args)</vh></v>
 <v t="tbuttler.20180908232444.1"><vh>procdir(path_name)</vh></v>
@@ -21,13 +21,13 @@
 <v t="tbuttler.20180909003721.1"><vh>main(_)</vh></v>
 <v t="tbuttler.20180915033213.1"><vh>wait_until_finished()</vh></v>
 </v>
-<v t="tbuttler.20180908232152.4"><vh>@clean parallel_tree_walk/worker.ex</vh>
+<v t="tbuttler.20180908232152.4" a="E"><vh>@clean parallel_tree_walk/worker.ex</vh>
 <v t="tbuttler.20180908232939.1"><vh>def start_link([])</vh></v>
 <v t="tbuttler.20180908232947.1"><vh>def init(state)</vh></v>
 <v t="tbuttler.20180908232955.1"><vh>def handle_call(dir_data, _from, state)</vh></v>
 <v t="tbuttler.20180908233001.1"><vh>def procdir(pid, dir_data)</vh></v>
 </v>
-<v t="tbuttler.20180908232152.2"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
+<v t="tbuttler.20180908232152.2" a="E"><vh>@clean parallel_tree_walk/proc_dir.ex</vh>
 <v t="tbuttler.20180908233156.1"><vh>procdir(data = {path_name, major, _proc_entry, _proc_filter})</vh></v>
 <v t="tbuttler.20180908233204.1"><vh>procdir({path_name, major, proc_entry, proc_filter}, file_stat)</vh></v>
 <v t="tbuttler.20180908233233.1"><vh>use Bitwise</vh></v>
@@ -158,6 +158,7 @@ defmodule ParallelTreeWalk.Worker do
 end
 </t>
 <t tx="tbuttler.20180908232353.1"># Provides a separate management space for :poolboy
+@spec pool_name() :: atom
 defp pool_name() do
   :parallel_tree_walk_pool
 end
@@ -168,6 +169,7 @@ end
 @end_raw
 Entry point for the Elixir Application
 """
+@spec start(atom, list(any)) :: {:error, any} | {:ok, pid()} | {:ok, pid(), any}
 def start(_type, _args) do
   poolboy_config = [
     {:name, {:local, pool_name()}},
@@ -198,6 +200,7 @@ Major device numbers are unique to the file system, and minor numbers are always
 *except* when the file is a device (block or character).  Practically, it means we can
 use a difference in the major device number of directories to identify a mount point.
 """
+@spec procdir(String.t) :: atom
 def procdir(path_name) do
   {:ok, %File.Stat{major_device: major}} = File.lstat(path_name)
 
@@ -235,6 +238,7 @@ end
   ## Exmaple
     See procdir/1, defined in this file.
   """
+  @spec procdir(String.t, integer(), (String.t, %File.Stat{} -&gt; boolean), (String.t -&gt; boolean)) :: atom
   def procdir(path_name, major, proc_entry, filter_entry) do
     case :poolboy.checkout(pool_name(), false) do
       # :false above means do not block
@@ -262,6 +266,7 @@ end
 @end_raw
 start_link/1 invoked by :poolboy, a wrapper for :gen_server.start_link/3
 """
+@spec start_link([]) :: GenServer.on_start()
 def start_link([]) do
   :gen_server.start_link(__MODULE__, [], [])
 end
@@ -272,6 +277,12 @@ end
 @end_raw
 Process initialization invoked by :poolboy
 """
+@spec init(init_arg :: term()) ::
+  {:ok, state}
+  | {:ok, state, timeout() | :hibernate | {:continue, term()}}
+  | :ignore
+  | {:stop, reason :: any()}
+when state: any()
 def init(state) do
   {:ok, state}
 end
@@ -282,6 +293,14 @@ end
 @end_raw
 handle_call/3 invoked by :poolboy
 """
+@spec handle_call(request :: term(), GenServer.from(), state :: term()) ::
+  {:reply, reply, new_state}
+  | {:reply, reply, new_state, timeout() | :hibernate | {:continue, term()}}
+  | {:noreply, new_state}
+  | {:noreply, new_state, timeout() | :hibernate | {:continue, term()}}
+  | {:stop, reason, reply, new_state}
+  | {:stop, reason, new_state}
+when reply: term(), new_state: term(), reason: term()
 def handle_call(dir_data, _from, state) do
   ParallelTreeWalk.ProcDir.procdir(dir_data)
   {:reply, [], state}
@@ -293,6 +312,7 @@ end
 @end_raw
 procdir/2 invoked by :poolboy
 """
+@spec procdir(GenServer.server(), {String.t, integer(), (String.t, integer(), fun(), fun() -&gt; boolean), (String.t -&gt; boolean)}) :: term()
 def procdir(pid, dir_data) do
   :gen_server.call(pid, dir_data)
 end
@@ -305,6 +325,7 @@ then optionally use the result to prevent crossingmountpoints.
 File.lstat/2 is wrapped in ParallelTreeWalk.ProcDir.retry/3 to
 skip ephemeral errors.
 """
+@spec procdir({String.t, integer(), (String.t, %File.Stat{} -&gt; boolean), (String.t -&gt; boolean)}) :: :ok
 def procdir(data = {path_name, major, _proc_entry, _proc_filter}) do
   case retry(fn -&gt; File.lstat(path_name, [{:time, :posix}]) end, 0, 10) do
     {:ok, file_stat} -&gt;
@@ -338,6 +359,7 @@ ParallelTreeWalk.ProcDir.procdir/2 invokes the supplied entry processing,
 and, in the case that the entry is a directory, recurses into processing
 the directory's entries.
 """
+@spec procdir({String.t, integer(), (String.t, %File.Stat{} -&gt; boolean), (String.t -&gt; boolean)}, %File.Stat{}) :: atom()
 def procdir({path_name, major, proc_entry, proc_filter}, file_stat) do
   case proc_entry.(path_name, file_stat) do
     false -&gt;
@@ -369,6 +391,7 @@ end
 </t>
 <t tx="tbuttler.20180908233215.1"># Attempt, with exponential backoff, to run the
 # supplied function.
+@spec retry(( -&gt; any), integer(), integer()) :: {:ok, term} | {:error, term}
 defp retry(to_retry, count, max) when count &lt; max do
   result = to_retry.()
 
@@ -424,7 +447,7 @@ defmodule ParallelTreeWalk.Mixfile do
   def escript do
     [
       main_module: ParallelTreeWalk,
-      emu_args: "+A32"
+      emu_args: "+SDio 64 +A64"
     ]
   end
 
@@ -439,7 +462,8 @@ defmodule ParallelTreeWalk.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      {:poolboy, "~&gt; 1.5"}
+      {:poolboy, "~&gt; 1.5"},
+      {:dialyxir, "~&gt; 0.5.0", only: [:dev], runtime: false}
     ]
   end
 end
@@ -452,6 +476,7 @@ Entry point for escript version.
 ## Arguments
   - args: a list of strings, usually tokenized by invocation from the command line
 """
+@spec main(list(String.t)) :: atom
 def main(args \\ []) do
   try do
     procdir(List.to_string(args))
@@ -474,6 +499,7 @@ Usually, you don't want to exit or otherwise proceed until the
 directory tree processing has finished.  wait_until_finished/0
 waits until that is the case, and returns :ok
 """
+@spec wait_until_finished() :: atom
 def wait_until_finished() do
   # look for 0 allocated poolboy processes
   case :poolboy.status(pool_name()) do
