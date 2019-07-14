@@ -61,46 +61,46 @@ defmodule ParallelTreeWalk do
   end
 
   @doc """
-    Primary entry point to ParallelTreeWalk.
+  Primary entry point to ParallelTreeWalk.
 
-    ## Arguments
-      - path_name: file system path name to the first item to process.  Usually a directory,
-        but won't fail with a file
+  ## Arguments
+    - path_name: file system path name to the first item to process.  Usually a directory,
+      but won't fail with a file
 
-      - major: false if you want to traverse mount points, otherwise the major device number
-        returned by an lstat() call on path_name
+    - major: false if you want to traverse mount points, otherwise the major device number
+      returned by an lstat() call on path_name
 
-      - proc_entry: a function called with two arguments: the path name of the entry being
-        processed; and the %File.Stat map returned by lstat() on that entry
+    - proc_entry: a function called with two arguments: the path name of the entry being
+      processed; and the %File.Stat map returned by lstat() on that entry
 
-      - filter_entry: a function which takes the last component of the file path, and returns
-        true if it should be processed, or false if not.  "." and ".." are implicitly filtered.
-        This can be used to skip, e.g., directories named ".backup"
+    - filter_entry: a function which takes the last component of the file path, and returns
+      true if it should be processed, or false if not.  "." and ".." are implicitly filtered.
+      This can be used to skip, e.g., directories named ".backup"
 
-    ## Exmaple
-      See procdir/1, defined in this file.
-    """
-    @spec procdir(String.t, integer(), (String.t, %File.Stat{} -> boolean), (String.t -> boolean)) :: atom
-    def procdir(path_name, major, proc_entry, filter_entry) do
-      case :poolboy.checkout(pool_name(), false) do
-        # :false above means do not block
-        :full ->
-          # IO.puts("all threads busy, top continuing with #{path_name}")
-          # all threads busy; don't deadlock, just keep going
-          ParallelTreeWalk.ProcDir.procdir({path_name, major, proc_entry, filter_entry})
+  ## Exmaple
+    See procdir/1, defined in this file.
+  """
+  @spec procdir(String.t, integer(), (String.t, %File.Stat{} -> boolean), (String.t -> boolean)) :: atom
+  def procdir(path_name, major, proc_entry, filter_entry) do
+    case :poolboy.checkout(pool_name(), false) do
+      # :false above means do not block
+      :full ->
+        # IO.puts("all threads busy, top continuing with #{path_name}")
+        # all threads busy; don't deadlock, just keep going
+        ParallelTreeWalk.ProcDir.procdir({path_name, major, proc_entry, filter_entry})
 
-        # todo: change spawn to Node.spawn/4
-        pid ->
-          spawn(fn ->
-            # IO.puts("top invokes pool worker processing #{path_name}")
-            try do
-              ParallelTreeWalk.Worker.procdir(pid, {path_name, major, proc_entry, filter_entry})
-            after
-              :ok = :poolboy.checkin(pool_name(), pid)
-            end
-          end)
-      end
+      # todo: change spawn to Node.spawn/4
+      pid ->
+        spawn(fn ->
+          # IO.puts("top invokes pool worker processing #{path_name}")
+          try do
+            ParallelTreeWalk.Worker.procdir(pid, {path_name, major, proc_entry, filter_entry})
+          after
+            :ok = :poolboy.checkin(pool_name(), pid)
+          end
+        end)
     end
+  end
 
   @doc """
   Entry point for escript version.
