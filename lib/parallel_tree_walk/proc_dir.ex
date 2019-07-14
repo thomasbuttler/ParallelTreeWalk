@@ -10,6 +10,7 @@ defmodule ParallelTreeWalk.ProcDir do
   File.lstat/2 is wrapped in ParallelTreeWalk.ProcDir.retry/3 to
   skip ephemeral errors.
   """
+  @spec procdir({String.t, integer(), (String.t, %File.Stat{} -> boolean), (String.t -> boolean)}) :: :ok
   def procdir(data = {path_name, major, _proc_entry, _proc_filter}) do
     case retry(fn -> File.lstat(path_name, [{:time, :posix}]) end, 0, 10) do
       {:ok, file_stat} ->
@@ -40,6 +41,7 @@ defmodule ParallelTreeWalk.ProcDir do
   and, in the case that the entry is a directory, recurses into processing
   the directory's entries.
   """
+  @spec procdir({String.t, integer(), (String.t, %File.Stat{} -> boolean), (String.t -> boolean)}, %File.Stat{}) :: atom()
   def procdir({path_name, major, proc_entry, proc_filter}, file_stat) do
     case proc_entry.(path_name, file_stat) do
       false ->
@@ -73,6 +75,7 @@ defmodule ParallelTreeWalk.ProcDir do
 
   # Attempt, with exponential backoff, to run the
   # supplied function.
+  @spec retry(( -> any), integer(), integer()) :: {:ok, term} | {:error, term}
   defp retry(to_retry, count, max) when count < max do
     result = to_retry.()
 

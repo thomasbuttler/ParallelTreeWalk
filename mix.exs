@@ -27,7 +27,7 @@ defmodule ParallelTreeWalk.Mixfile do
   def escript do
     [
       main_module: ParallelTreeWalk,
-      emu_args: "+A32"
+      emu_args: "+SDio 64 +A64"
     ]
   end
 
@@ -42,7 +42,8 @@ defmodule ParallelTreeWalk.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
-      {:poolboy, "~> 1.5"}
+      {:poolboy, "~> 1.5"},
+      {:dialyxir, "~> 0.5.0", only: [:dev], runtime: false}
     ]
   end
 end
