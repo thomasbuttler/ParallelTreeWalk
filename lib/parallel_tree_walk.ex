@@ -111,7 +111,8 @@ defmodule ParallelTreeWalk do
   @spec main(list(String.t)) :: atom
   def main(args \\ []) do
     try do
-      procdir(List.to_string(args))
+      Enum.each(args, &procdir/1)
+      wait_until_finished()
     catch
       type, value ->
         IO.puts("Error\n  #{inspect(type)}\n  #{inspect(value)}")

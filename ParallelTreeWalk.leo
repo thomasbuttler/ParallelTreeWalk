@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Created by Leo: http://leoeditor.com/leo_toc.html -->
 <leo_file xmlns:leo="http://leoeditor.com/namespaces/leo-python-editor/1.1" >
-<leo_header file_format="2" tnodes="0" max_tnode_index="0" clone_windows="0"/>
-<globals body_outline_ratio="0.5" body_secondary_ratio="0.5">
-	<global_window_position top="50" left="50" height="500" width="700"/>
-	<global_log_window_position top="0" left="0" height="0" width="0"/>
-</globals>
+<leo_header file_format="2"/>
+<globals/>
 <preferences/>
 <find_panel_settings/>
 <vnodes>
@@ -164,9 +161,7 @@ defp pool_name() do
 end
 
 </t>
-<t tx="tbuttler.20180908232425.1">@raw
-  @doc """
-@end_raw
+<t tx="tbuttler.20180908232425.1">@doc """
 Entry point for the Elixir Application
 """
 @spec start(atom, list(any)) :: {:error, any} | {:ok, pid()} | {:ok, pid(), any}
@@ -191,9 +186,7 @@ def start(_type, _args) do
 end
 
 </t>
-<t tx="tbuttler.20180908232444.1">@raw
-  @doc """
-@end_raw
+<t tx="tbuttler.20180908232444.1">@doc """
 An example use of procdir/4
 
 Major device numbers are unique to the file system, and minor numbers are always zero,
@@ -216,9 +209,7 @@ def procdir(path_name) do
 end
 
 </t>
-<t tx="tbuttler.20180908232512.1">@raw
-  @doc """
-@end_raw
+<t tx="tbuttler.20180908232512.1">@doc """
 Primary entry point to ParallelTreeWalk.
 
 ## Arguments
@@ -261,9 +252,7 @@ def procdir(path_name, major, proc_entry, filter_entry) do
 end
 
 </t>
-<t tx="tbuttler.20180908232939.1">@raw
-  @doc """
-@end_raw
+<t tx="tbuttler.20180908232939.1">@doc """
 start_link/1 invoked by :poolboy, a wrapper for :gen_server.start_link/3
 """
 @spec start_link([]) :: GenServer.on_start()
@@ -272,9 +261,7 @@ def start_link([]) do
 end
 
 </t>
-<t tx="tbuttler.20180908232947.1">@raw
-  @doc """
-@end_raw
+<t tx="tbuttler.20180908232947.1">@doc """
 Process initialization invoked by :poolboy
 """
 @spec init(init_arg :: term()) ::
@@ -288,9 +275,7 @@ def init(state) do
 end
 
 </t>
-<t tx="tbuttler.20180908232955.1">@raw
-  @doc """
-@end_raw
+<t tx="tbuttler.20180908232955.1">@doc """
 handle_call/3 invoked by :poolboy
 """
 @spec handle_call(request :: term(), GenServer.from(), state :: term()) ::
@@ -307,9 +292,7 @@ def handle_call(dir_data, _from, state) do
 end
 
 </t>
-<t tx="tbuttler.20180908233001.1">@raw
-  @doc """
-@end_raw
+<t tx="tbuttler.20180908233001.1">@doc """
 procdir/2 invoked by :poolboy
 """
 @spec procdir(GenServer.server(), {String.t, integer(), (String.t, integer(), fun(), fun() -&gt; boolean), (String.t -&gt; boolean)}) :: term()
@@ -317,9 +300,7 @@ def procdir(pid, dir_data) do
   :gen_server.call(pid, dir_data)
 end
 </t>
-<t tx="tbuttler.20180908233156.1">@raw
-  @doc """
-@end_raw
+<t tx="tbuttler.20180908233156.1">@doc """
 ParallelTreeWalk.ProcDir.procdir invokes the File.lstat/2 call,
 then optionally use the result to prevent crossingmountpoints.
 File.lstat/2 is wrapped in ParallelTreeWalk.ProcDir.retry/3 to
@@ -352,9 +333,7 @@ def procdir(data = {path_name, major, _proc_entry, _proc_filter}) do
 end
 
 </t>
-<t tx="tbuttler.20180908233204.1">@raw
-  @doc """
-@end_raw
+<t tx="tbuttler.20180908233204.1">@doc """
 ParallelTreeWalk.ProcDir.procdir/2 invokes the supplied entry processing,
 and, in the case that the entry is a directory, recurses into processing
 the directory's entries.
@@ -468,9 +447,7 @@ defmodule ParallelTreeWalk.Mixfile do
   end
 end
 </t>
-<t tx="tbuttler.20180909003721.1">@raw
-  @doc """
-@end_raw
+<t tx="tbuttler.20180909003721.1">@doc """
 Entry point for escript version.
 
 ## Arguments
@@ -479,7 +456,8 @@ Entry point for escript version.
 @spec main(list(String.t)) :: atom
 def main(args \\ []) do
   try do
-    procdir(List.to_string(args))
+    Enum.each(args, &amp;procdir/1)
+    wait_until_finished()
   catch
     type, value -&gt;
       IO.puts("Error\n  #{inspect(type)}\n  #{inspect(value)}")
@@ -492,9 +470,7 @@ deps
 mix.lock
 /parallel_tree_walk
 </t>
-<t tx="tbuttler.20180915033213.1">@raw
-  @doc """
-@end_raw
+<t tx="tbuttler.20180915033213.1">@doc """
 Usually, you don't want to exit or otherwise proceed until the
 directory tree processing has finished.  wait_until_finished/0
 waits until that is the case, and returns :ok
