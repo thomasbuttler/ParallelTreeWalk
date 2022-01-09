@@ -39,7 +39,9 @@ where
     * true for things to be processed
     * :false otherwise; use it to prune the tree by file name, e.g., to skip ".git" directories.
 
-Test Status: conversion to github actions in progress
+# setup-beam [action] [![GitHub Actions][ubuntu-img]][ubuntu]
+[ubuntu]: https://github.com/thomasbuttler/ParallelTreeWalk
+[ubuntu-img]: https://github.com/thomasbuttler/ParallelTreeWalk/workflows/ubuntu/badge.svg
 
 Current Best Example
 --------------------
