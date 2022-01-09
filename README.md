@@ -1,5 +1,6 @@
 Library to visit the files in a directory tree
 ==============================================
+![ubuntu](https://github.com/thomasbuttler/ParallelTreeWalk/actions/workflows/ci.yml/badge.svg)
 
 This library is intended for use with
 
@@ -38,8 +39,6 @@ where
   * returning
     * true for things to be processed
     * :false otherwise; use it to prune the tree by file name, e.g., to skip ".git" directories.
-
-Test Status: [![Build Status](https://travis-ci.org/thomasbuttler/ParallelTreeWalk.svg?branch=master)](https://travis-ci.org/thomasbuttler/ParallelTreeWalk)
 
 Current Best Example
 --------------------
