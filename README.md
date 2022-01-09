@@ -1,9 +1,6 @@
 Library to visit the files in a directory tree
 ==============================================
-<!-- markdownlint-disable MD013 -->
-#  [![GitHub Actions][ubuntu-img]][ci]
-[ci]: https://github.com/thomasbuttler/ParallelTreeWalk
-[ubuntu-img]: https://github.com/thomasbuttler/ParallelTreeWalk/workflows/ci/badge.svg
+![ubuntu](https://github.com/thomasbuttler/ParallelTreeWalk/actions/workflows/ci.yml/badge.svg)
 
 This library is intended for use with
 
